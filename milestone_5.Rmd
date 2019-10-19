@@ -1,0 +1,16 @@
+---
+title: "Milestone 5"
+author: "Andy Price"
+date: "10/18/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This project examines a Major League Baseball pitcher’s “stuff”: stuff, in baseball, refers to the raw power of a pitcher’s repertoire. It doesn’t consider his command or sequencing, but rather how fast his pitches are, how much they move (in every direction), and how many different types of pitches he can throw (fastball, curveball, slider, etc). “Stuff”, for nearly its entire existence, has been a buzzword thrown around by announcers with very little quantification. Now, though, with the introduction of Statcast technology to every MLB stadium, we have three-dimensional measurements of every pitch thrown, and can begin to quantify this historically vague concept of “stuff”. This project explores how much of an effect a pitcher’s velocity and movement affect the traditional results-oriented statistics foundational to sabermetrics. 
+
+Statcast data, which I pull using Bill Petti’s BaseballR and Carson Sievert’s PitchRx packages in R, has been most accurate the past two years (before that, the data has a large “park factor”, meaning that because of improper calibration or something similar, it was hard to make comparisons between pitches recorded by Statcast at two different stadiums). This was discovered by Jared Cross, founder of Steamer Projections, who helped provide background information for this project. Many thanks to Cross, Petti, and Sievert. 
+
+Each row of this data, which is directly scraped from Statcast’s official website (https://baseballsavant.mlb.com/) using tools in the BaseballR package, corresponds to a pitch thrown in the last two years, and contains variables for a pitch’s horizontal and vertical movement (measured in feet), velocity (measured in miles per hour), and result (this could be, for example, a swinging strike or a ball in play hit at 80 mph, as Statcast also stores data about the exit velocity of batted balls).

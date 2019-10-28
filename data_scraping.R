@@ -50,27 +50,29 @@ full_pitch_fx_data$pfx_x <- as.numeric.factor(full_pitch_fx_data$pfx_x)
 full_pitch_fx_data$pfx_z <- as.numeric.factor(full_pitch_fx_data$pfx_z)
 
 # Creating training set. Use sample frac to give percentage of rows in original
-# dataframe.
+# dataframe. NOPE
 
 full_pitch_fx_data$game_date <- parse_date(as.character(full_pitch_fx_data$game_date))
 pitch_data_2018 <- full_pitch_fx_data %>%
   filter(game_date > "2018-03-28" & game_date < "2018-10-29")
 
 set.seed(19)
-training_set_2018 <- sample_frac(pitch_data_2018, size = .8)
-training_set_2018$release_speed <- as.numeric.factor(training_set_2018$release_speed)
+# training_set_2018 <- sample_frac(pitch_data_2018, size = .8)
+# training_set_2018$release_speed <- as.numeric.factor(training_set_2018$release_speed)
 
-
+ordered_training_set_2018 <- pitch_data_2018 %>%
+  filter(game_date < "2018-08-15")
+ordered_training_set_2018$release_speed <- as.numeric.factor(ordered_training_set_2018$release_speed)
 
 
 # Graphing speed x movement (not nec.) ------------------------------------
 
 
-training_set_2018 %>%
-  filter(pitch_type == "FF") %>%
-  ggplot(aes(x = pfx_z, y = release_speed)) +
-  geom_point() +
-  geom_smooth()
+# training_set_2018 %>%
+#   filter(pitch_type == "FF") %>%
+#   ggplot(aes(x = pfx_z, y = release_speed)) +
+#   geom_point() +
+#   geom_smooth()
 
 
 
@@ -176,11 +178,59 @@ calculate_run_env <- function(date) {
 
 # write_csv(full_dates_w_run_envs, path = "/Users/andrewprice/Desktop/Final Project/run_env.csv")
 # write_csv(training_set_2018, path = "/Users/andrewprice/Desktop/Final Project/training_data_2018.csv")
+# write_csv(training_set_2018, path = "/Users/andrewprice/Desktop/Final Project/training_data_2018.csv")
 
 # Read these back in (much quicker than running the whole script).
 
-run_environments_2018 <- read.csv("run_env.csv")
-training_set_2018 <- read.csv("training_data_2018.csv")
+# run_environments_2018 <- read.csv("run_env.csv")
+# training_set_2018 <- read.csv("training_data_2018.csv")
 
 
-# Join with 2018 pitch data
+# Testing relationship between woba and rpg -------------------------------
+
+# Read in wOBA weights, rpg, and join together
+
+# woba_weights <- read.csv("~/Downloads/FanGraphs Leaderboard.csv") %>%
+#   slice(1:25)
+
+# Commented out code just tests the relationship between wOBA and rpg.
+
+# historical_rpg <- read.csv("~/Downloads/rpg.csv") %>%
+#   slice(1:25) %>%
+#   select(Year, R.G)
+# 
+# joined_historical_data <- historical_rpg %>%
+#   full_join(woba_weights, by = c("Year" = "Season")) 
+# 
+# ggplot(joined_historical_data, aes(x = R.W, y = wOBA)) +
+#   geom_point() +
+#   geom_smooth()
+
+
+
+# Calculating wOBA for every count --------------------------------------------------------
+
+# Add a count variable
+
+pitch_data_2018 <- pitch_data_2018 %>%
+  mutate(batting_count = paste(balls, "-", strikes, sep = ""))
+
+# Figure out how to add at-bat ID (group_by unique features, separate, and then
+# join back together)
+
+at_bat_IDs <- pitch_data_2018 %>%
+  count(game_date, batter, pitcher, outs_when_up, inning)
+
+# Add ID column
+at_bat_IDs <- at_bat_IDs %>%
+  mutate(at_bat_ID = 1:nrow(at_bat_IDs))
+
+with_atbat_IDs <- 
+  left_join(pitch_data_2018, at_bat_IDs, by = c("game_date", "batter", "pitcher", "outs_when_up", "inning"))
+
+# Check outcomes
+
+# outcomes_by_count <- training_set_2018 %>%
+#   filter(events != "null") %>%
+#   count(batting_count, events)
+  

@@ -208,7 +208,7 @@ calculate_run_env <- function(date) {
 
 
 
-# Calculating wOBA for every count --------------------------------------------------------
+# Adding count and atbat IDS  --------------------------------------------------------
 
 # Add a count variable
 
@@ -226,11 +226,34 @@ at_bat_IDs <- at_bat_IDs %>%
   mutate(at_bat_ID = 1:nrow(at_bat_IDs))
 
 with_atbat_IDs <- 
-  left_join(pitch_data_2018, at_bat_IDs, by = c("game_date", "batter", "pitcher", "outs_when_up", "inning"))
+  left_join(pitch_data_2018, 
+            at_bat_IDs, 
+            by = c("game_date", "batter", "pitcher", "outs_when_up", "inning"))
 
 # Check outcomes
 
-# outcomes_by_count <- training_set_2018 %>%
-#   filter(events != "null") %>%
-#   count(batting_count, events)
-  
+outcomes <- with_atbat_IDs %>%
+  filter(events != "null") %>%
+  count(events) %>%
+  spread(events, n) %>%
+  mutate(SF = sac_bunt + sac_bunt_double_play + sac_fly + sac_fly_double_play,
+         X1B = single,
+         X2B = double,
+         X3B = triple,
+         HR = home_run,
+         SO = strikeout + strikeout_double_play,
+         season = "2018",
+         HBP = hit_by_pitch,
+         uBB = walk,
+         AB = X1B + X2B + X3B + HR + SO + 
+           double_play + grounded_into_double_play + 
+           force_out + field_out + fielders_choice + 
+           fielders_choice_out + other_out + triple_play + field_error) %>%
+  select(season, uBB, HBP, X1B, X2B, X3B, HR, AB, SF, SO)
+
+
+
+woba_2018 <- woba_plus(outcomes)  
+
+
+

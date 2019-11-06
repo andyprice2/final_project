@@ -8,6 +8,7 @@ library(baseballr)
 library(janitor)
 library(broom)
 library(ranger)
+library(rsample)
 
 
 # read in data from csv written in last step
@@ -48,13 +49,13 @@ predict(test_model, repeated)$predictions
 
 # gerrit cole test
 # repeated <- tibble(pfx_x = -1.0553,
-                   # pfx_z = 1.2258,
-                   # release_speed = 97.3)
+# pfx_z = 1.2258,
+# release_speed = 97.3)
 
 
 
 
-# Builing the larger model ------------------------------------------------
+# Building the larger model ------------------------------------------------
 
 # Make list of pitch types with more than a thousand pitches
 
@@ -83,10 +84,46 @@ groomed_data <- data_2018 %>%
   mutate(new_event = ifelse(!is.na(events), paste(events), paste(description))) %>%
   mutate(new_event = ifelse(new_event == "strikeout", paste(description), paste(new_event))) %>%
   mutate(new_event = ifelse(new_event == "walk", paste(description), paste(new_event))) 
+  
+# Splitting into test and train
+
+data_split <- initial_split(groomed_data, prop = .75)
+
+# Extract the training dataframe
+
+training_data <- training(data_split)
+
+# Extract the testing dataframe
+
+testing_data <- testing(data_split)
+
+# Creating list column structure
+
+nested_training_data <- training_data %>%
+  group_by(pitch_name) %>%
+  nest()
 
 
-# Split into training and testing data
+# Set seed
 
+set.seed(42)
+
+# 
+cv_split <- nested_training_data %>% 
+  mutate(stuff = map(data, ~ vfold_cv(.x, v = 5))) 
+
+full_nested_training_set <- cv_split %>% 
+  unnest(stuff) %>%
+  mutate(
+    
+    # Extract the train dataframe for each split
+    
+    train = map(splits, ~training(.x)), 
+    
+    # Extract the validate dataframe for each split
+    
+    validate = map(splits, ~testing(.x))
+  )
 
 test_model <- ranger(formula = new_event ~ pfx_x + pfx_z + release_speed + vx0 + vy0 + vz0 + ax + ay + az, 
                      data = test_for_random_forest, 

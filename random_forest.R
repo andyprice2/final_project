@@ -113,7 +113,9 @@ cv_split <- nested_training_data %>%
   mutate(stuff = map(data, ~ vfold_cv(.x, v = 5))) 
 
 full_nested_training_set <- cv_split %>% 
-  unnest(stuff) %>%
+  unnest(stuff) 
+
+splitted <- full_nested_training_set %>%
   mutate(
     
     # Extract the train dataframe for each split

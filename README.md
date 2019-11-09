@@ -8,4 +8,4 @@ data_scraping.R is a depricated script that reads in an external csv (as opposed
 
 random_forest.R is the most important script, and it's where I clean the data, split it into training and testing sets, and then use Purrr to run a random forest analysis on every type of pitch.
 
-milestone5.Rmd contains an about page for the project.
+milestone_5.Rmd contains an about page for the project.

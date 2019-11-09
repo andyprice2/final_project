@@ -21,29 +21,29 @@ library(rsample)
 # test random forest
 
 
-test_for_random_forest <- data_2018 %>%
-  filter(game_date %in% c("2018-05-21", "2018-05-22")) %>%
-  filter(!is.na(pfx_x)) %>%
-  filter(!is.na(pfx_z)) %>% 
-  filter(!is.na(release_speed)) %>%
-  filter(!is.na(description)) %>%
-  mutate(new_event = ifelse(!is.na(events), paste(events), paste(description))) %>%
-  mutate(new_event = ifelse(new_event == "strikeout", paste(description), paste(new_event))) %>%
-  mutate(new_event = ifelse(new_event == "walk", paste(description), paste(new_event))) 
-
-test_model <- ranger(formula = new_event ~ pfx_x + pfx_z + release_speed + vx0 + vy0 + vz0 + ax + ay + az, 
-                     data = test_for_random_forest, 
-                     num.trees = 100, seed = 42, probability = T) 
-
-predicted <- data_2018 %>%
-  filter(game_date %in% c("2018-06-21", "2018-06-22")) %>%
-  filter(!is.na(pfx_x)) %>%
-  filter(!is.na(pfx_z)) %>% 
-  filter(!is.na(release_speed)) %>%
-  filter(!is.na(description)) %>%
-  select(pfx_x, pfx_z, release_speed)
-
-predict(test_model, repeated)$predictions
+# test_for_random_forest <- data_2018 %>%
+#   filter(game_date %in% c("2018-05-21", "2018-05-22")) %>%
+#   filter(!is.na(pfx_x)) %>%
+#   filter(!is.na(pfx_z)) %>% 
+#   filter(!is.na(release_speed)) %>%
+#   filter(!is.na(description)) %>%
+#   mutate(new_event = ifelse(!is.na(events), paste(events), paste(description))) %>%
+#   mutate(new_event = ifelse(new_event == "strikeout", paste(description), paste(new_event))) %>%
+#   mutate(new_event = ifelse(new_event == "walk", paste(description), paste(new_event))) 
+# 
+# test_model <- ranger(formula = new_event ~ pfx_x + pfx_z + release_speed + vx0 + vy0 + vz0 + ax + ay + az, 
+#                      data = test_for_random_forest, 
+#                      num.trees = 100, seed = 42, probability = T) 
+# 
+# predicted <- data_2018 %>%
+#   filter(game_date %in% c("2018-06-21", "2018-06-22")) %>%
+#   filter(!is.na(pfx_x)) %>%
+#   filter(!is.na(pfx_z)) %>% 
+#   filter(!is.na(release_speed)) %>%
+#   filter(!is.na(description)) %>%
+#   select(pfx_x, pfx_z, release_speed)
+# 
+# predict(test_model, repeated)$predictions
 
 
 
@@ -59,12 +59,12 @@ predict(test_model, repeated)$predictions
 
 # Make list of pitch types with more than a thousand pitches
 
-pitch_types_with_many_pitches <- data_2018 %>%
-  count(pitch_name) %>%
-  filter(n > 10000) %>%
-  select(pitch_name) %>%
-  filter(pitch_name != "") %>%
-  as.vector()
+# pitch_types_with_many_pitches <- data_2018 %>%
+#   count(pitch_name) %>%
+#   filter(n > 10000) %>%
+#   select(pitch_name) %>%
+#   filter(pitch_name != "") %>%
+#   as.vector()
 
 # Clean the data
 
@@ -108,26 +108,41 @@ nested_training_data <- training_data %>%
 
 set.seed(42)
 
+# cross-validation --------------------------------------------------------
+
+
+# # 
+# cv_split <- nested_training_data %>% 
+#   mutate(stuff = map(data, ~ vfold_cv(.x, v = 5))) 
 # 
-cv_split <- nested_training_data %>% 
-  mutate(stuff = map(data, ~ vfold_cv(.x, v = 5))) 
+# full_nested_training_set <- cv_split %>% 
+#   unnest(stuff) 
+# 
+# splitted <- full_nested_training_set %>%
+#   mutate(
+#     
+#     # Extract the train dataframe for each split
+  #   
+  #   train = map(splits, ~training(.x)), 
+  #   
+  #   # Extract the validate dataframe for each split
+  #   
+  #   validate = map(splits, ~testing(.x))
+  # )
 
-full_nested_training_set <- cv_split %>% 
-  unnest(stuff) 
 
-splitted <- full_nested_training_set %>%
-  mutate(
-    
-    # Extract the train dataframe for each split
-    
-    train = map(splits, ~training(.x)), 
-    
-    # Extract the validate dataframe for each split
-    
-    validate = map(splits, ~testing(.x))
-  )
+# running model -----------------------------------------------------------
 
-test_model <- ranger(formula = new_event ~ pfx_x + pfx_z + release_speed + vx0 + vy0 + vz0 + ax + ay + az, 
-                     data = test_for_random_forest, 
-                     num.trees = 100, seed = 42, probability = T) 
+
+
+models <- nested_training_data %>% 
+  mutate(model = map(data, ~ranger(formula = new_event ~ pfx_x + pfx_z + release_speed + vx0 + vy0 + vz0 + ax + ay + az, 
+                                    data = .x, 
+                                    num.trees = 100, seed = 42, probability = T)))
+
+
+
+repeated <- tibble(pfx_x = -1.0553,
+pfx_z = 1.2258,
+release_speed = 97.3)
 

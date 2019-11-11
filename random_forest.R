@@ -9,11 +9,11 @@ library(janitor)
 library(broom)
 library(ranger)
 library(rsample)
-
+library(fitdistrplus)
 
 # read in data from csv written in last step
 
-# data_2018 <- read.csv("with_res.csv")
+data_2018 <- read.csv("with_res.csv")
 
 # Test with two days of data ----------------------------------------------
 
@@ -135,14 +135,40 @@ set.seed(42)
 
 
 
-models <- nested_training_data %>% 
-  mutate(model = map(data, ~ranger(formula = new_event ~ pfx_x + pfx_z + release_speed + vx0 + vy0 + vz0 + ax + ay + az, 
+models_only_velo <- nested_training_data %>% 
+  mutate(model = map(data, ~ranger(formula = new_event ~ pfx_x + pfx_z + release_speed, 
                                     data = .x, 
                                     num.trees = 100, seed = 42, probability = T)))
 
 
 
-repeated <- tibble(pfx_x = -1.0553,
-pfx_z = 1.2258,
-release_speed = 97.3)
 
+.rowNamesDF(models_only_velo, make.names=FALSE) <- c("4-Seam Fastball", "Changeup", "2-Seam Fastball", "Slider", "Curveball", "Split Finger", "Sinker", "Cutter", "Knuckle Curve")
+
+# Example of how to call on a row
+
+predict(models_only_velo[["4-Seam Fastball", "model"]], cole)$predictions
+
+
+
+models_only_velo$row.names
+cole <- testing_data %>%
+  filter(player_name == "Gerrit Cole") %>%
+  filter(pitch_name == "4-Seam Fastball")
+
+cole %>% ggplot() +
+  geom_point(aes(x = release_speed, y = pfx_z))
+
+cole %>% 
+  summarise(mean = mean(release_speed),
+            sd = sd(release_speed))
+
+rnorm(10, 96.53244, 1.220829)
+
+cole %>%
+  mutate(weights = sample(c(1, 2), ))
+
+
+  cor(cole$release_speed, cole$pfx_z)
+
+descdist(cole$release_speed, discrete = FALSE)

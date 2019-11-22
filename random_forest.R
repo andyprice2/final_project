@@ -141,34 +141,117 @@ models_only_velo <- nested_training_data %>%
                                     num.trees = 100, seed = 42, probability = T)))
 
 
+# Name rows
 
-
-.rowNamesDF(models_only_velo, make.names=FALSE) <- c("4-Seam Fastball", "Changeup", "2-Seam Fastball", "Slider", "Curveball", "Split Finger", "Sinker", "Cutter", "Knuckle Curve")
+# .rowNamesDF(models_only_velo, make.names=FALSE) <- c("4-Seam Fastball", "Changeup", "2-Seam Fastball", "Slider", "Curveball", "Split Finger", "Sinker", "Cutter", "Knuckle Curve")
 
 # Example of how to call on a row
 
-predict(models_only_velo[["4-Seam Fastball", "model"]], cole)$predictions
+# predict(models_only_velo[["4-Seam Fastball", "model"]], cole)$predictions
 
 
 
-models_only_velo$row.names
-cole <- testing_data %>%
-  filter(player_name == "Gerrit Cole") %>%
-  filter(pitch_name == "4-Seam Fastball")
+# models_only_velo$row.names
+# cole <- testing_data %>%
+#   filter(player_name == "Gerrit Cole") %>%
+#   filter(pitch_name == "4-Seam Fastball")
+# 
+# cole %>% ggplot() +
+#   geom_point(aes(x = release_speed, y = pfx_z))
+# 
+# cole %>%
+#   summarise(mean = mean(release_speed),
+#             sd = sd(release_speed))
 
-cole %>% ggplot() +
-  geom_point(aes(x = release_speed, y = pfx_z))
+# rnorm(10, 96.53244, 1.220829)
 
-cole %>% 
-  summarise(mean = mean(release_speed),
-            sd = sd(release_speed))
+# How to prepare weights
 
-rnorm(10, 96.53244, 1.220829)
+# weighted <- cole %>%
+#   mutate(raw_weights = sample(c(1, 2), size = 413, replace = TRUE),
+#          weights = as.double(raw_weights))
 
-cole %>%
-  mutate(weights = sample(c(1, 2), ))
+# weights_for_test <- as.vector(weighted$weights)
+# 
+# ranger(formula = new_event ~ pfx_x + pfx_z + release_speed, 
+#        data = weighted,  case.weights = weights_for_test,
+#        num.trees = 100, seed = 42, probability = T)
 
 
-  cor(cole$release_speed, cole$pfx_z)
+# By pitcher --------------------------------------------------------------
 
-descdist(cole$release_speed, discrete = FALSE)
+
+# Function to use on all players (with more than 25 of a given pitch)
+
+grouping_function <- function(data) {
+  
+  data %>%
+  group_by(player_name) %>%
+  summarise(n = n(),
+            release_speed = mean(release_speed),
+            pfx_x = mean(pfx_x),
+            pfx_z = mean(pfx_z)) %>%
+  arrange(desc(n)) %>%
+  slice(1:4)
+
+}
+  
+with_all <- models_only_velo %>%
+  mutate(pitcher = map(data, ~grouping_function(.x)))
+
+# For loop attempt
+
+# for (row in 1:2) {
+#   
+#   model <- tester[[row, 3]]
+#   row  <- tester[row,]
+#   
+# 
+#   new_tester[row, "predictions"] <- predict(model, row)$predictions
+#   
+# }
+
+# MAP 2 should do the trick. Also you need to make it into a dataframe so unnest
+# will work (doesn't work on matrices, only dataframes).
+
+with_preds <- with_all %>% 
+  mutate(predict = map2(model, pitcher, ~as.data.frame(predict(.x, .y)$predictions)))
+
+
+# Unnesting for each pitch type -------------------------------------------
+
+fastball_four_seam <- with_preds %>% 
+  filter(pitch_name == "4-Seam Fastball") %>%
+  unnest(c(pitcher, predict))
+
+changeup <- with_preds %>% 
+  filter(pitch_name == "Changeup") %>%
+  unnest(c(pitcher, predict))
+
+fastball_two_seam <- with_preds %>% 
+  filter(pitch_name == "2-Seam Fastball") %>%
+  unnest(c(pitcher, predict))
+
+slider <- with_preds %>% 
+  filter(pitch_name == "Slider") %>%
+  unnest(c(pitcher, predict))
+
+curveball <- with_preds %>% 
+  filter(pitch_name == "Curveball") %>%
+  unnest(c(pitcher, predict))
+
+split_finger <- with_preds %>% 
+  filter(pitch_name == "Split Finger") %>%
+  unnest(c(pitcher, predict))
+
+sinker <- with_preds %>% 
+  filter(pitch_name == "Sinker") %>%
+  unnest(c(pitcher, predict))
+
+cutter <- with_preds %>% 
+  filter(pitch_name == "Cutter") %>%
+  unnest(c(pitcher, predict))
+
+knuckle_curve <- with_preds %>% 
+  filter(pitch_name == "Knuckle Curve") %>%
+  unnest(c(pitcher, predict))

@@ -91,14 +91,22 @@ ui <- fluidPage(
                ),
    
    # Call the changeup plot, which is determined by the user input -- they're
-   # given the options of all pitchers, which is determined by changeup_choices
-   # (created further below).
+   # given the options of all four pitchers. This will soon be automated instead
+   # of entered by hand, which will be infeasible when I expand beyond four
+   # players. I have the code, but it was having trouble publishing because some
+   # of it was only in my console -- have to go through and figure that problem
+   # out.
    
     tabPanel(
       "Changeup",
       sidebarPanel(
         selectInput(
-          "changeup_pitcher", "Pitcher", changeup_choices
+          "changeup_pitcher", "Pitcher", choices = c(
+            "Marco Estrada" = "Marco Estrada",
+            "Kyle Hendricks" = "Kyle Hendricks",
+            "Sean Manaea" = "Sean Manaea",
+            "Gio Gonzalez" = "Gio Gonzalez"
+          )
         )
       ),
       mainPanel(
@@ -112,7 +120,12 @@ ui <- fluidPage(
       "Four-Seam Fastball",
       sidebarPanel(
         selectInput(
-          "fastball_four_seam_pitcher", "Pitcher", fastball_choices
+          "fastball_four_seam_pitcher", "Pitcher", choices = c(
+          "Justin Verlander" = "Justin Verlander",
+          "Kyle Hendricks" = "Reynaldo Lopez",
+          "Sean Newcomb" = "Sean Newcomb",
+          "Kevin Gausman" = "Kevin Gausman"
+          )
         )
       ),
       mainPanel(
@@ -122,20 +135,17 @@ ui <- fluidPage(
   )
 )
 
-# Here I read in the RDS created in the randomforest.R script, and create
-# variables that store the names of all the pitchers.
-
-fastball_four_seam <- readRDS("fastball_four_seam.rds")
-changeup <- readRDS("changeup.RDS")
-
-fastball_choices <- setNames(fastball_four_seam$player_name, fastball_four_seam$player_name)
-changeup_choices <- setNames(changeup$player_name, changeup$player_name)
-
 # Now create the server, where the shiny app creates the plots. Should
 # eventually switch to pivot_wider. Coord flip because the names on the x-axis
 # were overlapping.
 
 server <- function(input, output) {
+  
+  # Here I read in the RDS created in the randomforest.R script, and create
+  # variables that store the names of all the pitchers.
+  
+  fastball_four_seam <- readRDS("fastball_four_seam.rds")
+  changeup <- readRDS("changeup.rds")
   
 # First, make fastball plot.
     
@@ -170,7 +180,7 @@ server <- function(input, output) {
       labs(
         x = "Outcome of Pitch",
         y = "Likelihood of Outcome",
-        title = "Likelihood of Outcomes for Pitcher's Average Fastball",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
         subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
       ) +
       coord_flip()

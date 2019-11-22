@@ -29,7 +29,7 @@ ui <- fluidPage(
                       "Kevin Gausman" = "Kevin Gausman"))
       ),
       mainPanel(
-        tableOutput("test")
+        plotOutput("fastball_four_seam")
       )
     ),
     tabPanel(
@@ -52,11 +52,22 @@ ui <- fluidPage(
 server <- function(input, output) {
  
   fastball_four_seam <- readRDS("fastball_four_seam.rds")
+  changeup <- readRDS("changeup.RDS")
   
-   output$test <- renderTable({
+   output$fastball_four_seam <- renderPlot({
      fastball_four_seam %>%
-       filter(player_name == input$fastball_four_seam_pitcher)
-   }, rownames = TRUE)
+       filter(player_name == input$fastball_four_seam_pitcher) %>%
+       .[, 7:ncol(fastball_four_seam)] %>%
+       gather(key = "outcome", value = "likelihood") %>%
+       filter(likelihood > 0.005) %>%
+       ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+       geom_col() +
+       labs(x = "Outcome of Pitch",
+            y = "Likelihood of Outcome",
+            title = "Likelihood of Outcomes for Pitcher's Average Fastball",
+            subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring") +
+       coord_flip()
+   })
     
   
 }

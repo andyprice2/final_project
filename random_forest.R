@@ -10,6 +10,7 @@ library(broom)
 library(ranger)
 library(rsample)
 library(fitdistrplus)
+library(fs)
 
 # read in data from csv written in last step
 
@@ -220,38 +221,65 @@ with_preds <- with_all %>%
 
 # Unnesting for each pitch type -------------------------------------------
 
+# Unnest for each pitch type and save as individual object.
+
 fastball_four_seam <- with_preds %>% 
   filter(pitch_name == "4-Seam Fastball") %>%
   unnest(c(pitcher, predict))
+
+fastball_four_seam <- fastball_four_seam[, -c(2,3)]
 
 changeup <- with_preds %>% 
   filter(pitch_name == "Changeup") %>%
   unnest(c(pitcher, predict))
 
+changeup <- changeup[, -c(2,3)]
+
 fastball_two_seam <- with_preds %>% 
   filter(pitch_name == "2-Seam Fastball") %>%
   unnest(c(pitcher, predict))
+
+fastball_two_seam <- fastball_two_seam[, -c(2,3)]
 
 slider <- with_preds %>% 
   filter(pitch_name == "Slider") %>%
   unnest(c(pitcher, predict))
 
+slider <- slider[, -c(2,3)]
+
 curveball <- with_preds %>% 
   filter(pitch_name == "Curveball") %>%
   unnest(c(pitcher, predict))
+
+curveball <- curveball[, -c(2,3)]
 
 split_finger <- with_preds %>% 
   filter(pitch_name == "Split Finger") %>%
   unnest(c(pitcher, predict))
 
+split_finger <- split_finger[, -c(2,3)]
+
 sinker <- with_preds %>% 
   filter(pitch_name == "Sinker") %>%
   unnest(c(pitcher, predict))
+
+sinker <- sinker[, -c(2,3)]
 
 cutter <- with_preds %>% 
   filter(pitch_name == "Cutter") %>%
   unnest(c(pitcher, predict))
 
+cutter <- cutter[, -c(2,3)]
+
 knuckle_curve <- with_preds %>% 
   filter(pitch_name == "Knuckle Curve") %>%
   unnest(c(pitcher, predict))
+
+knuckle_curve <- knuckle_curve[, -c(2,3)]
+
+# Save as RDSs ------------------------------------------------------------
+
+write_rds(fastball_four_seam, "final_shiny/fastball_four_seam.rds")
+write_rds(changeup, "final_shiny/changeup.rds")
+write_rds(slider, "final_shiny/slider.rds")
+write_rds(curveball, "final_shiny/curveball.rds")

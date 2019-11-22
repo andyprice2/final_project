@@ -104,13 +104,14 @@ nested_training_data <- training_data %>%
   group_by(pitch_name) %>%
   nest()
 
-
 # Set seed
 
 set.seed(42)
 
 # cross-validation --------------------------------------------------------
 
+# Deprecated, because random forests hold out some data to test against (OOB),
+# but useful in case I switch model types.
 
 # # 
 # cv_split <- nested_training_data %>% 
@@ -142,15 +143,13 @@ models_only_velo <- nested_training_data %>%
                                     num.trees = 100, seed = 42, probability = T)))
 
 
-# Name rows
+# How to name rows -- not needed now but still useful
 
 # .rowNamesDF(models_only_velo, make.names=FALSE) <- c("4-Seam Fastball", "Changeup", "2-Seam Fastball", "Slider", "Curveball", "Split Finger", "Sinker", "Cutter", "Knuckle Curve")
 
-# Example of how to call on a row
-
-# predict(models_only_velo[["4-Seam Fastball", "model"]], cole)$predictions
-
-
+# Deprecated test on Gerrit Cole, but a useful example to keep that shows
+# individual pitcher workflow, as well as how to sample from a pitcher's
+# velocity distribution if I decide to go that route.
 
 # models_only_velo$row.names
 # cole <- testing_data %>%
@@ -197,20 +196,10 @@ grouping_function <- function(data) {
 
 }
   
+# Run the grouping function on every row using purrr.
+
 with_all <- models_only_velo %>%
   mutate(pitcher = map(data, ~grouping_function(.x)))
-
-# For loop attempt
-
-# for (row in 1:2) {
-#   
-#   model <- tester[[row, 3]]
-#   row  <- tester[row,]
-#   
-# 
-#   new_tester[row, "predictions"] <- predict(model, row)$predictions
-#   
-# }
 
 # MAP 2 should do the trick. Also you need to make it into a dataframe so unnest
 # will work (doesn't work on matrices, only dataframes).
@@ -278,6 +267,9 @@ knuckle_curve <- with_preds %>%
 knuckle_curve <- knuckle_curve[, -c(2,3)]
 
 # Save as RDSs ------------------------------------------------------------
+
+# Save all of these as RDSs to the shiny folder, as they will be used to create
+# graphs in the shiny.
 
 write_rds(fastball_four_seam, "final_shiny/fastball_four_seam.rds")
 write_rds(changeup, "final_shiny/changeup.rds")

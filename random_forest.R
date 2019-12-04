@@ -12,9 +12,13 @@ library(rsample)
 library(fitdistrplus)
 library(fs)
 
+# function that negates %in%
+
+`%nin%` = Negate(`%in%`)
+
 # read in data from csv written in last step
 
-data_2018 <- read.csv("with_res.csv")
+both_years <- read.csv("both_years.csv")
 
 # Test with two days of data ----------------------------------------------
 
@@ -71,7 +75,7 @@ data_2018 <- read.csv("with_res.csv")
 
 lots_of_pitches <- c("2-Seam Fastball", "4-Seam Fastball", "Changeup", "Curveball", "Cutter", "Knuckle Curve", "Sinker", "Slider", "Split Finger")
 
-groomed_data <- data_2018 %>%
+groomed_data <- both_years %>%
   filter(pitch_name %in% lots_of_pitches) %>%
   filter(!is.na(pfx_x)) %>%
   filter(!is.na(pfx_z)) %>% 
@@ -84,21 +88,52 @@ groomed_data <- data_2018 %>%
   filter(!is.na(az)) %>%
   mutate(new_event = ifelse(!is.na(events), paste(events), paste(description))) %>%
   mutate(new_event = ifelse(new_event == "strikeout", paste(description), paste(new_event))) %>%
-  mutate(new_event = ifelse(new_event == "walk", paste(description), paste(new_event))) 
+  mutate(new_event = ifelse(new_event == "walk", paste(description), paste(new_event))) %>%
+  filter(new_event %nin% c("sac_fly_double_play", "pickoff_2b", "sac_bunt_double_play", 
+                           "pickoff_caught_stealing_home", "pickoff_3b", 
+                           "pickoff_caught_stealing_3b", "run", "batter_interference", "pitchout", 
+                           "bunt_foul_tip", "catcher_interf", "caught_stealing_home", 
+                           "caught_stealing_3b", "pickoff_1b", "other_out", "missed_bunt", 
+                           "caught_stealing_2b", "foul_bunt", "sac_bunt", "pickoff_caught_stealing_2b"))
+
+
+
+test <- groomed_data %>%
+  sample_n(size = 30000, replace = FALSE) 
+
+test %>% mutate(newer_event = recode(new_event, 
+                              swinging_strike = "strike",
+                              swinging_strike_blocked = "strike",
+                              called_strike = "strike",
+                              strikeout_double_play = "strike",
+                              blocked_ball = "ball",
+                              foul_tip = "foul",
+                              grounded_into_double_play = "in_play_out",
+                              field_out = "in_play_out",
+                              field_error = "in_play_out",
+                              force_out = "in_play_out",
+                              sac_fly = "in_play_out",
+                              fielders_choice_out
+                              
+                              ))
   
-# Splitting into test and train
 
-data_split <- initial_split(groomed_data, prop = .75)
 
-# Extract the training dataframe
 
-training_data <- training(data_split)
-
-# Extract the testing dataframe
-
-testing_data <- testing(data_split)
-
-# Creating list column structure
+  
+# # Splitting into test and train
+# 
+# data_split <- initial_split(groomed_data, prop = .75)
+# 
+# # Extract the training dataframe
+# 
+# training_data <- training(data_split)
+# 
+# # Extract the testing dataframe
+# 
+# testing_data <- testing(data_split)
+# 
+# # Creating list column structure
 
 nested_training_data <- training_data %>%
   group_by(pitch_name) %>%
@@ -275,3 +310,6 @@ write_rds(fastball_four_seam, "final_shiny/fastball_four_seam.rds")
 write_rds(changeup, "final_shiny/changeup.rds")
 write_rds(slider, "final_shiny/slider.rds")
 write_rds(curveball, "final_shiny/curveball.rds")
+
+
+

@@ -1,9 +1,30 @@
+
+# Libraries ---------------------------------------------------------------
+
 library(shiny)
 library(tidyverse)
 library(fs)
 library(markdown)
 library(gganimate)
 library(caTools)
+
+# Read in RDSs ------------------------------------------------------------
+
+# Here I read in the RDS created in the randomforest.R script, and create
+# variables that store the names of all the pitchers.
+
+fastball_four_seam <- readRDS("fastball_four_seam.rds")
+changeup <- readRDS("changeup.rds")
+curveball <- readRDS("curveball.rds")
+cutter <- readRDS("cutter.rds")
+fastball_two_seam <- readRDS("fastball_two_seam.rds")
+knuckle_curve <- readRDS("knuckle_curve.rds")
+sinker <- readRDS("sinker.rds")
+slider <- readRDS("slider.rds")
+split_finger <- readRDS("split_finger.rds")
+
+
+# Start of UI and navbar -------------------------------------------------------------
 
 # Create the UI, which controls the look of the page.
 
@@ -19,17 +40,20 @@ ui <- fluidPage(
 
   navbarPage(
     "Menu",
+
+    # About Page --------------------------------------------------------------
+
     tabPanel(
       "About",
-      
-   # Add an about page that uses html tags to style. P means paragraph, h means
-   # header, and the header numbers control size!
-   
+
+      # Add an about page that uses html tags to style. P means paragraph, h means
+      # header, and the header numbers control size!
+
       mainPanel(
         tags$h1("About This Project"),
-        
+
         tags$h2("Background"),
-        
+
         tags$p("This project aims to project pitch outcomes based on pitcher 'stuff'. Stuff, in baseball, 
                refers to the raw power of a pitcher’s repertoire. It doesn’t consider his command or sequencing, 
                but rather how fast his pitches are, how much they move (in every direction), and how many 
@@ -39,9 +63,9 @@ ui <- fluidPage(
                measurements of every pitch thrown, and can begin to quantify this historically vague concept of “stuff”. 
                This project explores how much of an effect a pitcher’s velocity and movement affect the traditional 
                results-oriented statistics foundational to sabermetrics."),
-        
+
         tags$h2("Methodology"),
-        
+
         tags$p("I start by scraping individual pitch-level data directly from baseball.savant.com. To
                do this I use Bill Petti’s BaseballR package. Baseball Savant stores Statcast data; 
                Statcast records the velocity and movement in both the x and y axes of every pitch, 
@@ -51,7 +75,7 @@ ui <- fluidPage(
                comparisons between pitches recorded by Statcast at two different stadiums). This was 
                discovered by Jared Cross, founder of Steamer Projections, who helped provide background 
                information for this project. Many thanks to Cross and Petti."),
-        
+
         tags$p("Then, after cleaning the data and splitting into training and testing sets, 
                I create a new, nested data frame out of this initial Statcast data frame, 
                in which there's a single row for each pitch type (for which there were more than
@@ -59,7 +83,7 @@ ui <- fluidPage(
                of a given type, which will be used for modeling. This is an important step in the modeling process:
                instead of making one model, there will be one for every type of pitch (so we aren't comparing the movement 
                of a curveball against that of a fastball). This allows for tailoring to each pitch type."),
-        
+
         tags$p("Now that the data is cleaned and segmented by pitch type, I run a random forest regression on 
                each pitch type, creating probability trees. Unlike the typical tree often used in a random forest analysis, 
                which either predicts of classifies, this produces a probability distribution that takes a pitch's velocity,
@@ -68,9 +92,9 @@ ui <- fluidPage(
                changeup tabs and you can select a pitcher (one of the four pitchers who threw the most of the given pitch in
                2018, and it will show you the predicted outcomes for their average pitch (a pitch with their average velocity
                and movement in both directions)."),
-        
+
         tags$h2("Rough-ness"),
-        
+
         tags$p("This is a rough draft, which means it's almost where I want it to be, but needs some tweaks. These won't
                be hard to add, since now I have a fully automated workflow that travels from scraping the data to building
                the models to building the shiny app. This has been the bulk of my focus up until now, and now that it's 
@@ -86,27 +110,25 @@ ui <- fluidPage(
                Adding more data (2019) and getting rid of these sources of noise will be pretty simple tasks but will drastically
                improve the models' brier scores. This is my main focus, but I will also make everything look a little prettier
                after its in its final final form (color will go a long way toward making this look nicer).")
-        
-               )
-               ),
-   
-   # Call the changeup plot, which is determined by the user input -- they're
-   # given the options of all four pitchers. This will soon be automated instead
-   # of entered by hand, which will be infeasible when I expand beyond four
-   # players. I have the code, but it was having trouble publishing because some
-   # of it was only in my console -- have to go through and figure that problem
-   # out.
-   
+      )
+    ),
+
+
+    # Changeup Output ---------------------------------------------------------
+
+    # Call the changeup plot, which is determined by the user input -- they're
+    # given the options of all four pitchers. This will soon be automated instead
+    # of entered by hand, which will be infeasible when I expand beyond four
+    # players. I have the code, but it was having trouble publishing because some
+    # of it was only in my console -- have to go through and figure that problem
+    # out.
+
     tabPanel(
       "Changeup",
       sidebarPanel(
         selectInput(
-          "changeup_pitcher", "Pitcher", choices = c(
-            "Marco Estrada" = "Marco Estrada",
-            "Kyle Hendricks" = "Kyle Hendricks",
-            "Sean Manaea" = "Sean Manaea",
-            "Gio Gonzalez" = "Gio Gonzalez"
-          )
+          "changeup_pitcher", "Pitcher",
+          choices = unique(changeup$player_name)
         )
       ),
       mainPanel(
@@ -114,41 +136,143 @@ ui <- fluidPage(
       )
     ),
 
-  # Do the same exact thing for fastball.
-  
+    # Fastball Output ---------------------------------------------------------
+
+    # Do the same exact thing for fastball.
+
     tabPanel(
       "Four-Seam Fastball",
       sidebarPanel(
         selectInput(
-          "fastball_four_seam_pitcher", "Pitcher", choices = c(
-          "Justin Verlander" = "Justin Verlander",
-          "Kyle Hendricks" = "Reynaldo Lopez",
-          "Sean Newcomb" = "Sean Newcomb",
-          "Kevin Gausman" = "Kevin Gausman"
-          )
+          "fastball_four_seam_pitcher", "Pitcher",
+          choices = unique(fastball_four_seam$player_name)
         )
       ),
       mainPanel(
         plotOutput("fastball_four_seam")
       )
+    ),
+
+    # Curveball Output --------------------------------------------------------
+
+    tabPanel(
+      "Curveball",
+      sidebarPanel(
+        selectInput(
+          "curveball_pitcher", "Pitcher",
+          choices = unique(curveball$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("curveball")
+      )
+    ),
+
+
+    # Cutter Output -----------------------------------------------------------
+
+    tabPanel(
+      "Cutter",
+      sidebarPanel(
+        selectInput(
+          "cutter_pitcher", "Pitcher",
+          choices = unique(cutter$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("cutter")
+      )
+    ),
+
+    # Two-Seam Fastball Output ------------------------------------------------
+
+    tabPanel(
+      "Two-Seam Fastball",
+      sidebarPanel(
+        selectInput(
+          "fastball_two_seam_pitcher", "Pitcher",
+          choices = unique(fastball_two_seam$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("fastball_two_seam")
+      )
+    ),
+
+
+    # Knuckle Curve Output ----------------------------------------------------
+
+    tabPanel(
+      "Knuckle Curve",
+      sidebarPanel(
+        selectInput(
+          "knuckle_curve_pitcher", "Pitcher",
+          choices = unique(knuckle_curve$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("knuckle_curve")
+      )
+    ),
+
+    # Sinker Output -----------------------------------------------------------
+
+    tabPanel(
+      "Sinker",
+      sidebarPanel(
+        selectInput(
+          "sinker_pitcher", "Pitcher",
+          choices = unique(sinker$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("sinker")
+      )
+    ),
+
+    # Slider Output -----------------------------------------------------------
+
+    tabPanel(
+      "Slider",
+      sidebarPanel(
+        selectInput(
+          "slider_pitcher", "Pitcher",
+          choices = unique(slider$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("slider")
+      )
+    ),
+
+    # Split-finger Output -----------------------------------------------------
+
+    tabPanel(
+      "Split-Finger",
+      sidebarPanel(
+        selectInput(
+          "split_finger_pitcher", "Pitcher",
+          choices = unique(split_finger$player_name)
+        )
+      ),
+      mainPanel(
+        plotOutput("split_finger")
+      )
     )
   )
 )
+
+# Start of Server ---------------------------------------------------------
 
 # Now create the server, where the shiny app creates the plots. Should
 # eventually switch to pivot_wider. Coord flip because the names on the x-axis
 # were overlapping.
 
 server <- function(input, output) {
-  
-  # Here I read in the RDS created in the randomforest.R script, and create
-  # variables that store the names of all the pitchers.
-  
-  fastball_four_seam <- readRDS("fastball_four_seam.rds")
-  changeup <- readRDS("changeup.rds")
-  
-# First, make fastball plot.
-    
+
+
+  # First, make fastball plot.
+
   output$fastball_four_seam <- renderPlot({
     fastball_four_seam %>%
       filter(player_name == input$fastball_four_seam_pitcher) %>%
@@ -163,9 +287,9 @@ server <- function(input, output) {
         title = "Likelihood of Outcomes for Pitcher's Average Fastball",
         subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
       ) +
+      scale_y_continuous(labels = scales::percent) +
       coord_flip()
   })
-  
 
   # Do the same thing for changeup.
 
@@ -183,8 +307,152 @@ server <- function(input, output) {
         title = "Likelihood of Outcomes for Pitcher's Average Changeup",
         subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
       ) +
+      scale_y_continuous(labels = scales::percent) +
       coord_flip()
   })
+  
+  # Curveball
+  
+  output$curveball <- renderPlot({
+    curveball %>%
+      filter(player_name == input$curveball_pitcher) %>%
+      .[, 7:ncol(curveball)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  # Cutter
+  
+  output$cutter <- renderPlot({
+    cutter %>%
+      filter(player_name == input$cutter_pitcher) %>%
+      .[, 7:ncol(cutter)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  # Fastball Two-Seam
+  
+  output$fastball_two_seam <- renderPlot({
+    fastball_two_seam %>%
+      filter(player_name == input$fastball_two_seam_pitcher) %>%
+      .[, 7:ncol(fastball_two_seam)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  # Knuckle Curve 
+  
+  output$knuckle_curve <- renderPlot({
+    knuckle_curve %>%
+      filter(player_name == input$knuckle_curve_pitcher) %>%
+      .[, 7:ncol(knuckle_curve)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  # Sinker
+  
+  output$sinker <- renderPlot({
+    sinker %>%
+      filter(player_name == input$sinker_pitcher) %>%
+      .[, 7:ncol(sinker)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  # Slider
+  
+  output$slider <- renderPlot({
+    slider %>%
+      filter(player_name == input$slider_pitcher) %>%
+      .[, 7:ncol(slider)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  # Split Finger 
+  
+  output$split_finger <- renderPlot({
+    split_finger %>%
+      filter(player_name == input$split_finger_pitcher) %>%
+      .[, 7:ncol(split_finger)] %>%
+      gather(key = "outcome", value = "likelihood") %>%
+      filter(likelihood > 0.005) %>%
+      ggplot(aes(x = reorder(outcome, likelihood), y = likelihood)) +
+      geom_col() +
+      labs(
+        x = "Outcome of Pitch",
+        y = "Likelihood of Outcome",
+        title = "Likelihood of Outcomes for Pitcher's Average Changeup",
+        subtitle = "Only outcomes shown are those with > 0.5 % chance of occuring"
+      ) +
+      scale_y_continuous(labels = scales::percent) +
+      coord_flip()
+  })
+  
+  
+  
 }
 
 # Run the application

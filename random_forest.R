@@ -130,7 +130,7 @@ groomed_data <- both_years %>%
 # 
 # # Creating list column structure
 
-nested_training_data <- training_data %>%
+nested_training_data <- groomed_data %>%
   group_by(pitch_name) %>%
   nest()
 
@@ -168,7 +168,7 @@ set.seed(42)
 
 
 models_only_velo <- nested_training_data %>% 
-  mutate(model = map(data, ~ranger(formula = new_event ~ pfx_x + pfx_z + release_speed, 
+  mutate(model = map(data, ~ranger(formula = newer_event ~ pfx_x + pfx_z + release_speed, 
                                     data = .x, 
                                     num.trees = 100, seed = 42, probability = T)))
 
@@ -216,13 +216,14 @@ models_only_velo <- nested_training_data %>%
 grouping_function <- function(data) {
   
   data %>%
+  filter(game_year == "2019") %>%
   group_by(player_name) %>%
   summarise(n = n(),
             release_speed = mean(release_speed),
             pfx_x = mean(pfx_x),
             pfx_z = mean(pfx_z)) %>%
   arrange(desc(n)) %>%
-  slice(1:4)
+  slice(1:25)
 
 }
   
@@ -305,6 +306,11 @@ write_rds(fastball_four_seam, "final_shiny/fastball_four_seam.rds")
 write_rds(changeup, "final_shiny/changeup.rds")
 write_rds(slider, "final_shiny/slider.rds")
 write_rds(curveball, "final_shiny/curveball.rds")
+write_rds(fastball_two_seam, "final_shiny/fastball_two_seam.rds")
+write_rds(cutter, "final_shiny/cutter.rds")
+write_rds(knuckle_curve, "final_shiny/knuckle_curve.rds")
+write_rds(sinker, "final_shiny/sinker.rds")
+write_rds(split_finger, "final_shiny/split_finger.rds")
 
 
 

@@ -94,14 +94,8 @@ groomed_data <- both_years %>%
                            "pickoff_caught_stealing_3b", "run", "batter_interference", "pitchout", 
                            "bunt_foul_tip", "catcher_interf", "caught_stealing_home", 
                            "caught_stealing_3b", "pickoff_1b", "other_out", "missed_bunt", 
-                           "caught_stealing_2b", "foul_bunt", "sac_bunt", "pickoff_caught_stealing_2b"))
-
-
-
-test <- groomed_data %>%
-  sample_n(size = 30000, replace = FALSE) 
-
-test %>% mutate(newer_event = recode(new_event, 
+                           "caught_stealing_2b", "foul_bunt", "sac_bunt", "pickoff_caught_stealing_2b")) %>%
+  mutate(newer_event = recode(new_event, 
                               swinging_strike = "strike",
                               swinging_strike_blocked = "strike",
                               called_strike = "strike",
@@ -113,9 +107,10 @@ test %>% mutate(newer_event = recode(new_event,
                               field_error = "in_play_out",
                               force_out = "in_play_out",
                               sac_fly = "in_play_out",
-                              fielders_choice_out
-                              
-                              ))
+                              fielders_choice_out = "in_play_out",
+                              fielders_choice = "in_play_out",
+                              triple_play = "in_play_out",
+                              double_play = "in_play_out"))
   
 
 

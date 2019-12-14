@@ -39,7 +39,7 @@ ui <- fluidPage(
   # gives some background.
 
   navbarPage(
-    "Menu",
+    "",
 
     # About Page --------------------------------------------------------------
 
@@ -90,7 +90,18 @@ ui <- fluidPage(
                vertical movement, and horizontal movement and compares it to similar pitches, showing the likelihood that a 
                given pitch will result in any given of outcomes (say, a called strike or a double). Go to the pitch tabs and
                you can select a pitcher (one of the 25 pitchers who threw the most of the given pitch in 2019, and it will show you the predicted outcomes for their average pitch (a pitch with their average velocity
-               and movement in both directions).")
+               and movement in both directions)."),
+        
+        # Add in the links, which are explained in the comments in the server section.
+        
+       uiOutput("github"),
+       
+       uiOutput("pdf"),
+       
+       uiOutput("video")
+        
+        
+        
       )
     ),
 
@@ -432,6 +443,30 @@ server <- function(input, output) {
       coord_flip()
   })
   
+  # Here I post a hyperlink to the github repo so people can check out the
+  # underlying code.
+  
+  urlGithub <- a("Github Repo", href="https://github.com/andyprice2/final_project")
+  output$github <- renderUI({
+    tagList("Link to ", urlGithub)
+  })
+    
+  # And here I give the hyperlink to download the PDF. I preferred not to have
+  # it appear directly on the about page because the two are semi-repetitive.
+  # This way if the viewer is especially interested, though, they can read it.
+    
+  urlPDF <- a("USCLAP Submission PDF", href="https://github.com/andyprice2/final-project-pdf/raw/master/USCLAP.pdf")
+  output$pdf <- renderUI({
+    tagList("Download ", urlPDF)
+  })
+  
+  # Link to video overview.
+  
+  urlVideo <- a("Video Overview", href="https://www.youtube.com/watch?v=mfU_9pugIfM")
+  output$video <- renderUI({
+    tagList("Link to ", urlVideo)
+  })
+
 }
 
 # Run the application
